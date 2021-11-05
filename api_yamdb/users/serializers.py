@@ -26,6 +26,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(TokenObtainPairSerializer):
+    token=serializers.CharField(source='access')
+    
+    class Meta:
+        fields = ('token')
     # fields = 'token'
 
     def get_token(self, user):

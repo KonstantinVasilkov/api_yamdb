@@ -1,28 +1,74 @@
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+from rest_framework.renderers import JSONRenderer
 
+from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import permissions, filters
 from rest_framework.pagination import PageNumberPagination 
 from requests.models import Response
+from rest_framework.decorators import api_view, renderer_classes
 
 from .models import User
 from .serializers import UserSerializer, TokenSerializer
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
-def profile(request):
-    pass
-    # users = User.objects.all()
-    # return render(request, 'users/profile.html', {'users': users})
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+def token_obtain(request):
+    SAMPLE_CODE = 'ABC'
+    username = request.data['username']
+    code = 'ABC'
+    user=get_object_or_404(User, username=username)
+
+    def verify_code(code):
+        return code == SAMPLE_CODE
+
+    if not verify_code(code):
+        raise TypeError('Your code is incorrect')
+
+
+    refresh = RefreshToken.for_user(user)
+    token = {
+        'token': str(refresh.access_token)
+    }
+    return Response(token, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@renderer_classes([JSONRenderer])
+def signup(request):
+    username = request.data['username']
+    email = request.data['email']
+    confirmation_code = "ABC"
+    SUBJECT = 'Код подтверждения'
+    TEXT = f'Ваш код подтерждения: {confirmation_code}'
+    FROM_FIELD = 'confirmation_code@yamdb.com'
+    TO_FIELD = [email,]
+    send_mail(
+            SUBJECT,
+            TEXT,
+            FROM_FIELD,
+            TO_FIELD,
+            fail_silently=False, 
+        )
+    return Response(request.data, status=status.HTTP_200_OK)
+
 
 
 class UserViewSet(ModelViewSet):
 
-    # queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = PageNumberPagination 
-
     filter_backends = (filters.SearchFilter,)
+
+    def get_pagination_class(self):
+        if self.request.resolver_match.url_name == 'individual_user-list':
+            return None
+        return PageNumberPagination
+
+    pagination_class = property(fget=get_pagination_class)
 
     def get_queryset(self):
         if self.kwargs.get('username') == 'me':
@@ -57,6 +103,7 @@ class UserViewSet(ModelViewSet):
 
 # class TokenView(TokenObtainPairView):
     # serializer_class = TokenSerializer
+
 
 
 # class SignUpViewSet(ModelViewSet):
