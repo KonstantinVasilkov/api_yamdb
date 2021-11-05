@@ -14,6 +14,7 @@ from .models import User
 from .serializers import UserSerializer, TokenSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from .permissions import AdminOrOwnDataAccess
 
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
@@ -62,6 +63,7 @@ class UserViewSet(ModelViewSet):
 
     serializer_class = UserSerializer
     filter_backends = (filters.SearchFilter,)
+    permission_classes = (AdminOrOwnDataAccess,)
 
     def get_pagination_class(self):
         if self.request.resolver_match.url_name == 'individual_user-list':
@@ -78,6 +80,7 @@ class UserViewSet(ModelViewSet):
             else:
                 raise TypeError('You are not authenticated')
         elif self.kwargs.get('username'):
+            print ("Детали пользователя:", self.request.user.is_authenticated, self.request.user.is_staff, self.request.user.is_superuser)
             return User.objects.filter(username=self.kwargs.get('username'))
         else:
             return User.objects.all()
