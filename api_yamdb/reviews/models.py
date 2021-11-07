@@ -1,11 +1,14 @@
-from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
 from users.models import User
 
 
 class Titles(models.Model):
-    pass
+    name = models.CharField(
+        max_length=256,
+        verbose_name='Произведение',
+    )
 
 
 class Reviews(models.Model):
@@ -27,16 +30,17 @@ class Reviews(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='titles',
+        related_name='reviews',
         verbose_name='Автор отзыва'
     )
     title = models.ForeignKey(
         Titles,
         on_delete=models.CASCADE,
-        related_name='titles',
+        related_name='reviews',
     )
 
     class Meta:
+        unique_together = ('author', 'title')
         ordering = ['-pub_date']
 
     def __str__(self):

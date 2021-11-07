@@ -12,6 +12,7 @@ class User(AbstractUser):
         (MODERATOR, 'User with content edit privileges'),
         (ADMIN, 'Full rights user'),
     ]
+
     role = models.CharField(
         max_length=10, 
         choices=USER_ROLES,

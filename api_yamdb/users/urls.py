@@ -1,12 +1,10 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-# from .views import UserViewSet, TokenView, token_obtain
-from .views import UserViewSet, token_obtain, signup
+from rest_framework_simplejwt.views import (TokenObtainPairView,
+                                            TokenRefreshView)
 
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+# from .views import UserViewSet, TokenView, token_obtain
+from .views import UserViewSet, signup, token_obtain
 
 app_name = 'users'
 
