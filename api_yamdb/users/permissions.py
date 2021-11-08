@@ -10,16 +10,16 @@ class AdminOrOwnProfile(permissions.BasePermission):
             own_data_flag = False
 
         return (
-            request.user.is_staff 
-            or request.user.is_superuser
-            or request.user.role == 'admin'
-            or own_data_flag 
+                request.user.is_staff
+                or request.user.is_superuser
+                or request.user.role == 'admin'
+                or owner_data_flag
         )
 
     def has_object_permission(self, request, view, obj):
         return (
-            obj.username == request.user.username
-            or request.user.is_staff 
-            or request.user.is_superuser
-            or request.user.role == 'admin'
+                obj.username == request.user.username
+                or request.user.is_staff
+                or request.user.is_superuser
+                or request.user.role == 'admin'
         )

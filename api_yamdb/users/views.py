@@ -1,5 +1,9 @@
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+from requests.models import Response
+from rest_framework import filters, permissions, status
+from rest_framework.decorators import api_view, renderer_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.renderers import JSONRenderer
 from rest_framework.decorators import action
 
@@ -8,10 +12,6 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 # from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
                     
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import permissions, filters
-from rest_framework.pagination import PageNumberPagination 
-from requests.models import Response
-from rest_framework.decorators import api_view, renderer_classes
 
 from .models import User
 from .serializers import UserSerializer, TokenSerializer
@@ -68,12 +68,12 @@ def signup(request):
             data = {"error": ["e-mail не совпадает со значением в БД"]}
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
     send_mail(
-            SUBJECT,
-            TEXT,
-            FROM_FIELD,
-            TO_FIELD,
-            fail_silently=False, 
-        )
+        SUBJECT,
+        TEXT,
+        FROM_FIELD,
+        TO_FIELD,
+        fail_silently=False,
+    )
     return Response(request.data, status=status.HTTP_200_OK)
 
 

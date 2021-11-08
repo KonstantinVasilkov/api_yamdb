@@ -15,7 +15,7 @@ router_v1 = DefaultRouter()
 
 # router_v1.register(r'users/(?P<username>[$\w.-]+)', UserViewSet, basename='individual_user')
 # router_v1.register('users', UserViewSet, basename = 'users')
-router_v1.register('users/me/', UserViewSet, basename = 'me')
+# router_v1.register('users/me/', UserViewSet, basename = 'me')
 router_v1.register(r'users', UserViewSet, basename = 'users')
 
 
