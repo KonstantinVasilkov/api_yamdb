@@ -1,9 +1,12 @@
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework.renderers import JSONRenderer
+from rest_framework.decorators import action
 
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+# from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
+                    
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import permissions, filters
 from rest_framework.pagination import PageNumberPagination 
@@ -14,22 +17,26 @@ from .models import User
 from .serializers import UserSerializer, TokenSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .permissions import AdminOrOwnDataAccess
+from .permissions import AdminOrOwnProfile
 
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
 def token_obtain(request):
     SAMPLE_CODE = 'ABC'
-    username = request.data['username']
-    code = 'ABC'
+    username = request.data['username'] or None
+    code = request.data['confirmation_code']
     user=get_object_or_404(User, username=username)
 
     def verify_code(code):
         return code == SAMPLE_CODE
 
     if not verify_code(code):
-        raise TypeError('Your code is incorrect')
-
+        data = {
+                "error": [
+                "Проверочный код неверный"
+                ]
+        }
+        return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
     refresh = RefreshToken.for_user(user)
     token = {
@@ -41,13 +48,25 @@ def token_obtain(request):
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
 def signup(request):
-    username = request.data['username']
     email = request.data['email']
+    username = request.data['username']
     confirmation_code = "ABC"
+
+    # ЗДЕСЬ нужно обязательно реализовать проверку, что e-mai это e-mail, и что оба поля не пустые!!
+
     SUBJECT = 'Код подтверждения'
     TEXT = f'Ваш код подтерждения: {confirmation_code}'
     FROM_FIELD = 'confirmation_code@yamdb.com'
     TO_FIELD = [email,]
+
+    try:
+        user=get_object_or_404(User, username=username)
+    except:
+        try:
+            User.objects.create(username=username, email=email)
+        except:
+            data = {"error": ["e-mail не совпадает со значением в БД"]}
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
     send_mail(
             SUBJECT,
             TEXT,
@@ -58,67 +77,59 @@ def signup(request):
     return Response(request.data, status=status.HTTP_200_OK)
 
 
-
 class UserViewSet(ModelViewSet):
+# class UserViewSet(RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, GenericViewSet):
 
     serializer_class = UserSerializer
     filter_backends = (filters.SearchFilter,)
-    permission_classes = (AdminOrOwnDataAccess,)
+    permission_classes = (AdminOrOwnProfile,)
+    #http_method_names = ('get', 'patch',)
+    lookup_field = "username"
 
     def get_pagination_class(self):
-        if self.request.resolver_match.url_name == 'individual_user-list':
+        if self.request.method != 'list':
             return None
         return PageNumberPagination
 
     pagination_class = property(fget=get_pagination_class)
 
-    def get_queryset(self):
-        if self.kwargs.get('username') == 'me':
-            if self.request.user.is_authenticated:
-                username = self.request.user.username
-                return User.objects.filter(username=username)
-            else:
-                raise TypeError('You are not authenticated')
-        elif self.kwargs.get('username'):
-            print ("Детали пользователя:", self.request.user.is_authenticated, self.request.user.is_staff, self.request.user.is_superuser)
-            return User.objects.filter(username=self.kwargs.get('username'))
-        else:
-            return User.objects.all()
-
-    # потом будет либо IsAdminUser или собственный пермишен
-    # permission_classes = (permissions.IsAdminUser,) 
-    #pagination_class = LimitOffsetPagination
-    
-    # def_get_permissions(self, request): 
-        # if request.user.role == 'admin':
-            # return AdminOnly
+    # def get_queryset(self):
+        # if self.kwargs.get('username') == 'me':
+            # if self.request.user.is_authenticated:
+                # username = self.request.user.username)
+                # return User.objects.get(username=username)
+            # else:
+                # raise TypeError('You are not authenticated')
+        # elif self.kwargs.get('username'):
+            # return User.objects.filter(username=self.kwargs.get('username'))
         # else:
-            # return permissions.
+            # return User.objects.all()
+    queryset = User.objects.all()
 
+    # @action(detail=True, url_path='me')
+    # def me(self, request):
+        # username = self.request.user.username
+        # me = User.objects.filter(username=username)
+        # serializer = self.get_serializer(me, many=False)
+        # return Response(serializer.data) 
 
-    # def perform_update(self, request, serializer):
+    def retrieve(self, request, username=None):
+        queryset = User.objects.all()
+        if username == 'me':
+            username = self.request.user.username
+        user = get_object_or_404(queryset, username=username)
+        serializer = UserSerializer(user)
+        return Response(serializer.data) 
+
+    #@action(methods=['patch'])
+    # def perform_update(self, serializer):
         # serializer.is_valid(raise_exception=True)
-        # if request.user.role=="admin" or request.user.is_superuser:
-            # serializer.save()
+        # print ("serializer data =", serializer.data)
+        # if serializer.instance.role=="admin" or serializer.instance.is_superuser or serializer.instance.is_staff:
+        # if serializer.instance.is_superuser or serializer.instance.is_staff:
+            # serializer.save(serializer.data)
         # else:
-            # serializer.save(serializer.date.pop(**username)) # посмотреть, как было в kittigram
-
-
-# class TokenView(TokenObtainPairView):
-    # serializer_class = TokenSerializer
-
-
-
-# class SignUpViewSet(ModelViewSet):
-    # def send_code(self, request):
-        # confirmation_code = "12345"
-        # username = request.data["username"]
-        # user = get_object_or_404(User, username=username)
-        # email = user.email
-        # send_mail(
-            # 'Код подтверждения', # Subject
-            # f'Ваш код подтерждения: {confirmation_code}', # Body
-            # 'confirmation_code@yamdb.com',  # From
-            # [email],  # To
-            # fail_silently=False, 
-        # )
+            # m = serializer.validated_data
+            # print ("Было", m)
+            # print("Стало:", m.pop('role'))
+            # serializer.save(m)

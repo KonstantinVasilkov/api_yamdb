@@ -17,12 +17,16 @@ class UserSerializer(serializers.ModelSerializer):
         if value == 'me':
             raise TypeError ('me is reserved name')
         return value
-
+    
+    # def perform_create(self, serializer):
+        # serializer.is_valid(raise_exception=True)
+        # serializer.save(author=self.request.user)
 
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'bio','role')
         required_fields = ('username', 'email',)
+
 
 
 class TokenSerializer(TokenObtainPairSerializer):
