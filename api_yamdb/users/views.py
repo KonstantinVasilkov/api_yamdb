@@ -93,18 +93,29 @@ class UserViewSet(ModelViewSet):
 
     pagination_class = property(fget=get_pagination_class)
 
-    # def get_queryset(self):
-        # if self.kwargs.get('username') == 'me':
-            # if self.request.user.is_authenticated:
-                # username = self.request.user.username)
-                # return User.objects.get(username=username)
-            # else:
-                # raise TypeError('You are not authenticated')
-        # elif self.kwargs.get('username'):
-            # return User.objects.filter(username=self.kwargs.get('username'))
-        # else:
-            # return User.objects.all()
-    queryset = User.objects.all()
+    def get_queryset(self):
+        if self.kwargs.get('username') == 'me':
+            if self.request.user.is_authenticated:
+                username = self.request.user.username
+                self.kwargs['username'] = username
+                return User.objects.filter(username=username)
+            else:
+                raise TypeError('You are not authenticated')
+        elif self.kwargs.get('username'):
+            return User.objects.filter(username=self.kwargs.get('username'))
+        else:
+            return User.objects.all()
+
+    # queryset = User.objects.all()
+
+    # @action(detail=True, url_path='me')
+    # def me(self, request):
+        # print ("request: ", request)
+        # user = User.objects.filter(name="a-buroff")
+        # Передадим queryset сериализатору 
+        # и НЕ разрешим работу со списком объектов
+        # serializer = self.get_serializer(user, many=False)
+        # return Response(serializer.data) 
 
     # @action(detail=True, url_path='me')
     # def me(self, request):
@@ -113,13 +124,21 @@ class UserViewSet(ModelViewSet):
         # serializer = self.get_serializer(me, many=False)
         # return Response(serializer.data) 
 
-    def retrieve(self, request, username=None):
-        queryset = User.objects.all()
-        if username == 'me':
-            username = self.request.user.username
-        user = get_object_or_404(queryset, username=username)
-        serializer = UserSerializer(user)
-        return Response(serializer.data) 
+    # def destoy(self):
+        # print("Пробуем удалить объект, object = ", object)
+        # super().destroy
+
+    # def retrieve(self, object):
+        #queryset = User.objects.all()
+        # print ("Начинаем работу функции retreive. self.request=", self.request)
+
+        # if self.request.user == 'me':
+            # print ("Имя пользователя", self.request.user)
+            # username = 'a-buroff'
+        # username = 'a-buroff'
+        # user = get_object_or_404(User, username=username)
+        # serializer = UserSerializer(user)
+        # return Response(serializer.data) 
 
     #@action(methods=['patch'])
     # def perform_update(self, serializer):
