@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
@@ -10,7 +11,7 @@ class CommentSerializer(serializers.ModelSerializer):
                                           read_only=True)
 
     class Meta:
-        model = models.Comments
+        model = models.Comment
         fields = ('id', 'text', 'author', 'pub_date')
         read_only_fields = ('review', 'author')
 
@@ -22,14 +23,14 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         read_only_fields = ('author', 'title')
-        model = models.Reviews
+        model = models.Review
 
     def validate(self, data):
         title_id = self.context['view'].kwargs.get('title_id')
         request = self.context['request']
-        title = get_object_or_404(models.Titles, pk=title_id)
+        title = get_object_or_404(models.Title, pk=title_id)
         if request.method == 'POST':
-            if models.Reviews.objects.filter(
+            if models.Review.objects.filter(
                     title=title,
                     author=request.user
             ).exists():
@@ -40,8 +41,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-
     class Meta:
         fields = '__all__'
-        model = models.Titles
-
+        model = models.Title

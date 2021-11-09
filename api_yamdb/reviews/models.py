@@ -4,14 +4,14 @@ from django.db import models
 from users.models import User
 
 
-class Titles(models.Model):
+class Title(models.Model):
     name = models.CharField(
         max_length=256,
         verbose_name='Произведение',
     )
 
 
-class Reviews(models.Model):
+class Review(models.Model):
     text = models.TextField(
         verbose_name='Текст отзыва'
     )
@@ -34,7 +34,7 @@ class Reviews(models.Model):
         verbose_name='Автор отзыва'
     )
     title = models.ForeignKey(
-        Titles,
+        Title,
         on_delete=models.CASCADE,
         related_name='reviews',
     )
@@ -47,9 +47,9 @@ class Reviews(models.Model):
         return self.text[:10]
 
 
-class Comments(models.Model):
+class Comment(models.Model):
     review = models.ForeignKey(
-        Reviews,
+        Review,
         on_delete=models.CASCADE,
         blank=True,
         null=True,

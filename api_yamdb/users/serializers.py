@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         if value == 'me':
-            raise TypeError ('me is reserved name')
+            raise TypeError('me is reserved name')
         return value
     
     # def perform_create(self, serializer):
@@ -24,12 +24,11 @@ class UserSerializer(serializers.ModelSerializer):
         required_fields = ('username', 'email',)
 
 
-
 class TokenSerializer(TokenObtainPairSerializer):
-    token=serializers.CharField(source='access')
+    token = serializers.CharField(source='access')
     
     class Meta:
-        fields = ('token')
+        fields = ('token',)
     # fields = 'token'
 
     def get_token(self, user):

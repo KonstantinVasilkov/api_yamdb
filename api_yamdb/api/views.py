@@ -1,26 +1,34 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, viewsets
+from rest_framework import filters, viewsets
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from reviews.models import Comments, Reviews, Titles
+from reviews.models import Comment, Review, Title
+from .permissions import IsAuthorOrStaffOrReadOnly
 
 from .serializers import CommentSerializer, ReviewSerializer, TitleSerializer
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
-    queryset = Titles.objects.all()
+    queryset = Title.objects.all()
     serializer_class = TitleSerializer
     pagination_class = LimitOffsetPagination
+    permission_classes = (
+        IsAuthorOrStaffOrReadOnly,
+        IsAuthenticatedOrReadOnly
+    )
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
-    # filter_backends = (filters.SearchFilter,)
-    # search_fields = ('=category__', '=following__username')
+    permission_classes = (
+        IsAuthorOrStaffOrReadOnly,
+        IsAuthenticatedOrReadOnly
+    )
 
     def _get_title(self):
-        return get_object_or_404(Titles, id=self.kwargs['title_id'])
+        return get_object_or_404(Title, id=self.kwargs['title_id'])
 
     def perform_create(self, serializer):
         title = self._get_title()
@@ -32,12 +40,16 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
-    queryset = Reviews.objects.all()
+    queryset = Review.objects.all()
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
+    permission_classes = (
+        IsAuthorOrStaffOrReadOnly,
+        IsAuthenticatedOrReadOnly
+    )
 
     def _get_review(self):
-        return get_object_or_404(Reviews, id=self.kwargs['review_id'])
+        return get_object_or_404(Review, id=self.kwargs['review_id'])
 
     def perform_create(self, serializer):
         review = self._get_review()
