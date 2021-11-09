@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from requests.models import Response
 from rest_framework import filters, permissions, status
 from rest_framework.decorators import api_view, renderer_classes
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.renderers import JSONRenderer
 from rest_framework.decorators import action
 
@@ -85,13 +85,15 @@ class UserViewSet(ModelViewSet):
     permission_classes = (AdminOrOwnProfile,)
     #http_method_names = ('get', 'patch',)
     lookup_field = "username"
+    # pagination_class = PageNumberPagination
 
     def get_pagination_class(self):
         if self.request.method != 'list':
             return None
         return PageNumberPagination
-
-    pagination_class = property(fget=get_pagination_class)
+        # return LimitOffsetPagination
+    
+    # pagination_class = property(fget=get_pagination_class)
 
     def get_queryset(self):
         if self.kwargs.get('username') == 'me':
