@@ -65,7 +65,7 @@ def token_obtain(request):
 
     if not verify_code(confirmation_code):
         errors = True
-        error_fields['confirmation_code'].append('confirmation_code неверный')
+        error_fields['confirmation_code'].append('confrimation_code неверный')
         return Response(error_fields, status=status.HTTP_400_BAD_REQUEST)
 
     refresh = RefreshToken.for_user(user)
@@ -77,7 +77,6 @@ def token_obtain(request):
 
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
-# flake8: noqa: C901
 def signup(request):
     email = ''
     username = ''
@@ -85,50 +84,48 @@ def signup(request):
         email = request.data['email']
     if 'username' in request.data:
         username = request.data['username']
-
     SUBJECT = 'Код подтверждения'
     confirmation_code = "ABC"
     TEXT = f'Ваш код подтерждения: {confirmation_code}'
     FROM_FIELD = 'confirmation_code@yamdb.com'
     TO_FIELD = [email, ]
-
+    errors = False
     error_fields = {
         "email": [],
         "username": []
     }
+    try:
+        validate_email(email)
+    except ValidationError:
+        errors = True
+        error_fields['email'].append('Некорректно заполнен email')
 
-    def check_email(value):
-        try:
-            validate_email(value)
-            if value == '':
-                error_fields['email'].append("email не может быть пустым")
-                return False
-            if User.objects.filter(email=value).exists():
-                error_fields['email'].append("email уже есть в базе")
-                return False
-            return True
-        except ValidationError:
-            error_fields['email'].append("Некорректный email")
-            return False
+    try:
+        validate_username(username)
+    except ValidationError:
+        errors = True
+        error_fields['username'].append('Некорректно заполнен username')
 
-    def check_username(value):
-        try:
-            validate_username(value)
-            if value == 'me' or value == '':
-                error_fields['username'].append(
-                    "Имя пользоватлея не можеты быть me или пустым")
-                return False
-            if User.objects.filter(username=value).exists():
-                error_fields['username'].append("Пользователь уже существует")
-                return False
-            return True
-        except ValidationError:
-            error_fields['username'].append("Некорректный username")
-            return False
+    if username == 'me' or username == '':
+        errors = True
+        error_fields['username'].append('Пустое значение и "me" недопустимы')
 
-    if not check_username(username) or not check_email(email):
+    try:
+        get_object_or_404(User, username=username)
+        errors = True
+        error_fields['username'].append('Такой пользователь уже существует')
+    except Exception:
+        pass
+
+    try:
+        get_object_or_404(User, email=email)
+        errors = True
+        error_fields['email'].append('email уже существует')
+    except Exception:
+        pass
+
+    if errors:
         return Response(error_fields, status=status.HTTP_400_BAD_REQUEST)
-
     send_mail(
         SUBJECT,
         TEXT,
