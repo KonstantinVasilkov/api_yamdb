@@ -1,4 +1,5 @@
-from django.contrib.auth.models import AnonymousUser
+import datetime as dt
+
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
@@ -40,7 +41,52 @@ class ReviewSerializer(serializers.ModelSerializer):
         return data
 
 
-class TitleSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
+
     class Meta:
-        fields = '__all__'
+        model = models.Category
+        fields = ('name', 'slug')
+
+
+class GenreSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Genre
+        fields = ('name', 'slug')
+
+
+class TitleBaseSerializater(serializers.ModelSerializer):
+    genre = GenreSerializer(read_only=True, many=True)
+    category = CategorySerializer(read_only=True)
+    rating = serializers.SerializerMethodField()
+
+    class Meta:
         model = models.Title
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
+
+    def get_rating(self, obj):
+        score = 0
+        reviews = obj.reviews
+        for review in reviews:
+            score += review.score
+        return round(score / reviews.count())
+
+
+class TitlePostSerializer(serializers.ModelSerializer):
+    genre = serializers.SlugRelatedField(many=True, slug_field='name',
+                                         queryset=models.Genre.objects.all())
+    category = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=models.Category.objects.all()
+    )
+
+    class Meta:
+        model = models.Title
+        fields = ('name', 'year', 'description', 'genre', 'category')
+
+    def validate_year(self, value):
+        year = dt.date.today().year
+        if 0 < value > year:
+            raise serializers.ValidationError('Неправильный год!')
+        return value
