@@ -6,6 +6,8 @@ from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.renderers import JSONRenderer
 from rest_framework.decorators import action
+from rest_framework import exceptions
+from django.core.exceptions import ValidationError
 
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -19,54 +21,111 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import AdminOrOwnProfile
 
+from django.core.validators import validate_email
+from django.core.validators import validate_slug as validate_username
+from django.contrib.auth.validators import UnicodeUsernameValidator as validate_username
+
+
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
 def token_obtain(request):
     SAMPLE_CODE = 'ABC'
-    username = request.data['username'] or None
-    code = request.data['confirmation_code']
-    user=get_object_or_404(User, username=username)
+    errors = False
+    error_404 = False
+    error_fields = {
+        "username":[],
+        "confirmation_code": []
+    }
+    if 'username' in request.data:
+        username = request.data['username']
+    else:
+        errors = True
+        error_fields['username'].append('Отсутствует поле username')
+        username = None
 
-    def verify_code(code):
-        return code == SAMPLE_CODE
+    if 'confirmation_code' in request.data:
+        confirmation_code = request.data['confirmation_code']
+    else: 
+        errors = True
+        error_fields['confirmation_code'].append('Отсутствует поле confrimation_code')
+        confirmation_code = ''
+    def verify_code(value):
+        return value == SAMPLE_CODE
 
-    if not verify_code(code):
-        data = {
-                "error": [
-                "Проверочный код неверный"
-                ]
-        }
-        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+    if not verify_code(confirmation_code):
+        errors = True
+        error_fields['confirmation_code'].append('confrimation_code неверный')
+
+    try:
+        user=get_object_or_404(User, username=username)
+    except:
+        data = {"username": "Пустое поле username "}
+        return Response(data, status=status.HTTP_404_NOT_FOUND)
+        # return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+    if errors:
+        # data = {"error": error_fields}
+        data = error_fields
+        return Response(data, status=status.HTTP_400_BAD_REQUEST) 
 
     refresh = RefreshToken.for_user(user)
     token = {
         'token': str(refresh.access_token)
     }
     return Response(token, status=status.HTTP_200_OK)
-
+    
 
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
 def signup(request):
-    email = request.data['email']
-    username = request.data['username']
+    if 'email' in request.data:
+        email = request.data['email']
+    else:
+        email = ''
+    if 'username' in request.data:
+        username = request.data['username']
+    else:
+        username = ''
     confirmation_code = "ABC"
-
-    # ЗДЕСЬ нужно обязательно реализовать проверку, что e-mai это e-mail, и что оба поля не пустые!!
 
     SUBJECT = 'Код подтверждения'
     TEXT = f'Ваш код подтерждения: {confirmation_code}'
     FROM_FIELD = 'confirmation_code@yamdb.com'
     TO_FIELD = [email,]
-
+    errors = False
+    error_404 = False
+    error_fields = {
+        "email":[],
+        "username": []
+    }
     try:
-        user=get_object_or_404(User, username=username)
+        validate_email(email)
+    except ValidationError as e:
+        errors = True
+        error_fields['email'].append('Некорректно заполнен email')
+    try: 
+        validate_username(username)
     except:
+        errors = True
+        error_fields['username'].append('Некорректно заполнен username')
+    if username == 'me' or username == '':
+        errors = True
+        error_fields['username'].append('Пустое значение и "me" недопустимы')
+    try:
+        get_object_or_404(User, username=username)
+        # т.е. если пользователь есть (не возник exception), то это ошибка
+        errors = True
+        error_fields['username'].append('Такой пользователь уже существует')     
+    except:
+        # создаем пользователя, как указано выше
         try:
             User.objects.create(username=username, email=email)
+        # а вот если тут не получилось, значит, уже есть такой email
         except:
-            data = {"error": ["e-mail не совпадает со значением в БД"]}
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+            errors = True
+            error_fields['email'].append('email уже существует')  
+
+
     send_mail(
         SUBJECT,
         TEXT,
@@ -74,7 +133,15 @@ def signup(request):
         TO_FIELD,
         fail_silently=False,
     )
+    # if error_404:
+        # data = {'error': error_fields}
+        # return Response(data, status=status.HTTP_404_NOT_FOUND)
+    if errors:
+        #data = {'error': error_fields}
+        data = error_fields
+        return Response(data, status=status.HTTP_400_BAD_REQUEST)
     return Response(request.data, status=status.HTTP_200_OK)
+
 
 
 class UserViewSet(ModelViewSet):
@@ -84,7 +151,7 @@ class UserViewSet(ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     permission_classes = (AdminOrOwnProfile,)
     #http_method_names = ('get', 'patch',)
-    lookup_field = "username"
+    lookup_field = 'username'
     # pagination_class = PageNumberPagination
 
     def get_pagination_class(self):
@@ -108,49 +175,24 @@ class UserViewSet(ModelViewSet):
         else:
             return User.objects.all()
 
-    # queryset = User.objects.all()
+    def perform_destroy(self, object):
+        print("Пробуем удалить объект, object.username = ", object.username)
+        print("Пробуем удалить объект, kwargs = ", self.request.resolver_match.kwargs)
+        if ('username' in self.request.resolver_match.kwargs 
+            and self.request.resolver_match.kwargs['username'] == 'me'):
+            raise exceptions.MethodNotAllowed('delete', detail='нельзя удалить самого себя')
+            # return Response(self.request.data, status=status.HTTP_405_METHOD_NOT_ALLOWED) 
+        super().perform_destroy(object)
 
-    # @action(detail=True, url_path='me')
-    # def me(self, request):
-        # print ("request: ", request)
-        # user = User.objects.filter(name="a-buroff")
-        # Передадим queryset сериализатору 
-        # и НЕ разрешим работу со списком объектов
-        # serializer = self.get_serializer(user, many=False)
-        # return Response(serializer.data) 
+    def perform_update(self, serializer):
+        role = self.request.user.role
+        if (self.request.user.is_authenticated
+            and role != 'admin'
+            and not self.request.user.is_staff
+            and not self.request.user.is_superuser):
+                # self.request.user.role = 'user'
+                print ("Вот, что присваиваем: ")
+                serializer.save(role=role)
+        else:
+            super().perform_update(serializer)
 
-    # @action(detail=True, url_path='me')
-    # def me(self, request):
-        # username = self.request.user.username
-        # me = User.objects.filter(username=username)
-        # serializer = self.get_serializer(me, many=False)
-        # return Response(serializer.data) 
-
-    # def destoy(self):
-        # print("Пробуем удалить объект, object = ", object)
-        # super().destroy
-
-    # def retrieve(self, object):
-        #queryset = User.objects.all()
-        # print ("Начинаем работу функции retreive. self.request=", self.request)
-
-        # if self.request.user == 'me':
-            # print ("Имя пользователя", self.request.user)
-            # username = 'a-buroff'
-        # username = 'a-buroff'
-        # user = get_object_or_404(User, username=username)
-        # serializer = UserSerializer(user)
-        # return Response(serializer.data) 
-
-    #@action(methods=['patch'])
-    # def perform_update(self, serializer):
-        # serializer.is_valid(raise_exception=True)
-        # print ("serializer data =", serializer.data)
-        # if serializer.instance.role=="admin" or serializer.instance.is_superuser or serializer.instance.is_staff:
-        # if serializer.instance.is_superuser or serializer.instance.is_staff:
-            # serializer.save(serializer.data)
-        # else:
-            # m = serializer.validated_data
-            # print ("Было", m)
-            # print("Стало:", m.pop('role'))
-            # serializer.save(m)
