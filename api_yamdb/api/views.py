@@ -18,6 +18,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -26,6 +27,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
@@ -42,7 +44,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     ordering = ['name']
 
     def get_serializer_class(self):
-        if self.action in ('list', 'retrieve'):
+        if self.request.method == ('get'):
             return TitlePostSerializer
         return TitleBaseSerializater
 

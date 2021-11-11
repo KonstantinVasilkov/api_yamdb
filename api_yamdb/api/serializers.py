@@ -67,10 +67,16 @@ class TitleBaseSerializater(serializers.ModelSerializer):
 
     def get_rating(self, obj):
         score = 0
-        reviews = obj.reviews
+        reviews = obj.reviews.all()
         for review in reviews:
             score += review.score
-        return round(score / reviews.count())
+        try:
+            rating = round(score / reviews.count())
+        except ZeroDivisionError:
+            rating = 0
+        if reviews == '':
+            rating = None
+        return rating
 
 
 class TitlePostSerializer(serializers.ModelSerializer):
