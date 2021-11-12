@@ -12,7 +12,7 @@ from .permissions import IsAuthorOrStaffOrReadOnly, IsAdminOrReadOnly
 from .serializers import (CommentSerializer, ReviewSerializer,
                           TitleBaseSerializater, TitlePostSerializer,
                           GenreSerializer, CategorySerializer)
-
+# from .filters import TitleFilter
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
@@ -52,9 +52,12 @@ class TitlesViewSet(viewsets.ModelViewSet):
     )
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,
                        filters.OrderingFilter)
-    filterset_fields = ('genre', 'category')
-    ordering_fields = ('name',)
-    ordering = ['name']
+    # filter_backends = (TitleFilter,)
+    filterset_fields = ('genre__slug', 'category__slug', 'name', 'year')
+    # filterset_fields = ('genre', 'category')
+
+    # ordering_fields = ('name',)
+    # ordering = ['name']
 
     def get_serializer_class(self):
         if self.request.method == ('GET'):
