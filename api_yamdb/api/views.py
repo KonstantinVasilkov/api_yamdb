@@ -57,7 +57,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     ordering = ['name']
 
     def get_serializer_class(self):
-        if self.request.method == ('get'):
+        if self.request.method == ('GET'):
             return TitleBaseSerializater
         return TitlePostSerializer
            # return TitlePostSerializer
