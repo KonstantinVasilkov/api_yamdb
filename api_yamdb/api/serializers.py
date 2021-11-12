@@ -73,17 +73,17 @@ class TitleBaseSerializater(serializers.ModelSerializer):
         try:
             rating = round(score / reviews.count())
         except ZeroDivisionError:
-            rating = 0
+            rating = None
         if reviews == '':
             rating = None
         return rating
 
 
 class TitlePostSerializer(serializers.ModelSerializer):
-    genre = serializers.SlugRelatedField(many=True, slug_field='name',
+    genre = serializers.SlugRelatedField(many=True, slug_field='slug',
                                          queryset=models.Genre.objects.all())
     category = serializers.SlugRelatedField(
-        slug_field='name',
+        slug_field='slug', 
         queryset=models.Category.objects.all()
     )
 
@@ -96,3 +96,4 @@ class TitlePostSerializer(serializers.ModelSerializer):
         if 0 < value > year:
             raise serializers.ValidationError('Неправильный год!')
         return value
+
