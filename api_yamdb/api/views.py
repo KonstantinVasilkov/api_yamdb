@@ -58,8 +58,10 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method == ('get'):
-            return TitlePostSerializer
-        return TitleBaseSerializater
+            return TitleBaseSerializater
+        return TitlePostSerializer
+           # return TitlePostSerializer
+        # return TitleBaseSerializater
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):

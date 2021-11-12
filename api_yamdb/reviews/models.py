@@ -42,7 +42,7 @@ class Title(models.Model):
     name = models.CharField(
         max_length=50,
         verbose_name="Произведение",
-        unique=True
+        # unique=True
     )
     year = models.IntegerField(
         verbose_name="Дата выхода",
@@ -51,16 +51,8 @@ class Title(models.Model):
         blank=True,
         verbose_name="Описание",
     )
-    # genre = models.ManyToManyField(
-        # Genre,
-        # blank=True,
-        # related_name="titles",
-        # verbose_name="Жанр"
-    # )
-
     genre = models.ManyToManyField(
         Genre, through='GenreTitle')
-
     category = models.ForeignKey(
         Category,
         blank=True,

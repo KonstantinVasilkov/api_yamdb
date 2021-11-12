@@ -68,14 +68,14 @@ class TitleBaseSerializater(serializers.ModelSerializer):
     def get_rating(self, obj):
         score = 0
         reviews = obj.reviews.all()
+        if not reviews:
+            return None
         for review in reviews:
             score += review.score
         try:
             rating = round(score / reviews.count())
         except ZeroDivisionError:
-            rating = None
-        if reviews == '':
-            rating = None
+            return None
         return rating
 
 
@@ -89,7 +89,7 @@ class TitlePostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Title
-        fields = ('name', 'year', 'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
     def validate_year(self, value):
         year = dt.date.today().year
