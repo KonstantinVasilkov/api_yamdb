@@ -1,18 +1,18 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, viewsets
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.exceptions import MethodNotAllowed
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, viewsets
+from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.pagination import (LimitOffsetPagination,
+                                       PageNumberPagination)
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from reviews.models import Category, Genre, Review, Title
 
-from reviews.models import Review, Title, Genre, Category
-from .permissions import IsAuthorOrStaffOrReadOnly, IsAdminOrReadOnly
+from .filters import TitlesFilter
+from .permissions import IsAdminOrReadOnly, IsAuthorOrStaffOrReadOnly
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer,
+                          TitleBaseSerializater, TitlePostSerializer)
 
-from .serializers import (CommentSerializer, ReviewSerializer,
-                          TitleBaseSerializater, TitlePostSerializer,
-                          GenreSerializer, CategorySerializer)
-# from .filters import TitleFilter
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
@@ -27,6 +27,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, slug):
         raise MethodNotAllowed("Не разрешенный метод")
 
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -35,36 +36,22 @@ class CategoryViewSet(viewsets.ModelViewSet):
     search_fields = ('name',)
     lookup_field = 'slug'
 
-    # http_method_names = ['get', 'post', 'head', 'delete']
-
-    # def retrieve(self, request, slug):
-        # raise MethodNotAllowed("Не разрешенный метод")
 
 class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
-    # pagination_class = LimitOffsetPagination
     pagination_class = PageNumberPagination
 
     permission_classes = (
         IsAdminOrReadOnly,
-        # IsAuthorOrStaffOrReadOnly,
-        # IsAuthenticatedOrReadOnly
     )
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,
                        filters.OrderingFilter)
-    # filter_backends = (TitleFilter,)
-    filterset_fields = ('genre__slug', 'category__slug', 'name', 'year')
-    # filterset_fields = ('genre', 'category')
-
-    # ordering_fields = ('name',)
-    # ordering = ['name']
+    filterset_class = TitlesFilter
 
     def get_serializer_class(self):
-        if self.request.method == ('GET'):
+        if self.request.method == 'GET':
             return TitleBaseSerializater
         return TitlePostSerializer
-           # return TitlePostSerializer
-        # return TitleBaseSerializater
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):

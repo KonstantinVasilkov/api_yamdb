@@ -3,7 +3,6 @@ import datetime as dt
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
-
 from reviews import models
 
 
@@ -42,14 +41,12 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.Category
         fields = ('name', 'slug')
 
 
 class GenreSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.Genre
         fields = ('name', 'slug')
@@ -83,7 +80,7 @@ class TitlePostSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(many=True, slug_field='slug',
                                          queryset=models.Genre.objects.all())
     category = serializers.SlugRelatedField(
-        slug_field='slug', 
+        slug_field='slug',
         queryset=models.Category.objects.all()
     )
 
@@ -96,4 +93,3 @@ class TitlePostSerializer(serializers.ModelSerializer):
         if 0 < value > year:
             raise serializers.ValidationError('Неправильный год!')
         return value
-

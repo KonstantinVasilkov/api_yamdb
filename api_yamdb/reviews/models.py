@@ -1,6 +1,5 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-
 from users.models import User
 
 
@@ -61,6 +60,7 @@ class Title(models.Model):
         related_name="titles",
         verbose_name="Категория"
     )
+
     def __str__(self):
         return self.name
 
@@ -127,7 +127,6 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text[:10]
-
 
 
 class GenreTitle(models.Model):

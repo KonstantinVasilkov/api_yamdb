@@ -2,7 +2,7 @@ from rest_framework import permissions
 
 
 class IsAuthorOrStaffOrReadOnly(permissions.BasePermission):
-    
+
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -10,7 +10,7 @@ class IsAuthorOrStaffOrReadOnly(permissions.BasePermission):
             return False
         else:
             return (request.user.role in ['admin', 'moderator']
-                or obj.author == request.user)
+                    or obj.author == request.user)
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):

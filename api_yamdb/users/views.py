@@ -1,26 +1,22 @@
+from django.contrib.auth.validators import \
+    UnicodeUsernameValidator as validate_username
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.validators import validate_email
+from django.core.validators import validate_slug as validate_username
 from django.shortcuts import get_object_or_404
 from requests.models import Response
-from rest_framework import filters, status
+from rest_framework import exceptions, filters, status
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.renderers import JSONRenderer
-from rest_framework import exceptions
-from django.core.exceptions import ValidationError
-
-from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
-from .serializers import UserSerializer
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import AdminOrOwnProfile
-
-from django.core.validators import validate_email
-from django.core.validators import validate_slug as validate_username
-from django.contrib.auth.validators import (
-    UnicodeUsernameValidator as validate_username)
+from .serializers import UserSerializer
 
 
 @api_view(['POST'])
@@ -141,7 +137,6 @@ def signup(request):
 
 
 class UserViewSet(ModelViewSet):
-
     serializer_class = UserSerializer
     filter_backends = (filters.SearchFilter,)
     permission_classes = (AdminOrOwnProfile,)

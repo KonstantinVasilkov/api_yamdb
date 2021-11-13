@@ -9,7 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         if value == 'me':
-            raise TypeError('Знаение me зарезервировано')
+            raise TypeError('Значение "me" зарезервировано')
         return value
 
     class Meta:

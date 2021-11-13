@@ -22,3 +22,8 @@ class User(AbstractUser):
         blank=True,
     )
     email = models.EmailField(blank=False, unique=True, null=False)
+
+    def save(self, *args, **kwargs):
+        if self.is_superuser:
+            self.role = 'admin'
+        return super().save(*args, **kwargs)
