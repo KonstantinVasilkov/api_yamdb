@@ -1,5 +1,3 @@
-from django.contrib.auth.validators import \
-    UnicodeUsernameValidator as validate_username
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
@@ -71,6 +69,30 @@ def token_obtain(request):
     return Response(token, status=status.HTTP_200_OK)
 
 
+def check_username(value):
+    try:
+        validate_username(value)
+        if value == 'me' or not value:
+            return "Имя пользователя не может быть me или пустым"
+        if User.objects.filter(username=value).exists():
+            return "Пользователь уже существует"
+        return True
+    except ValidationError:
+        return "Некорректный username"
+
+
+def check_email(value):
+    try:
+        validate_email(value)
+        if not value:
+            return "email не может быть пустым"
+        if User.objects.filter(email=value).exists():
+            return "email уже есть в базе"
+        return True
+    except ValidationError:
+        return "Некорректный email"
+
+
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
 def signup(request):
@@ -83,45 +105,19 @@ def signup(request):
 
     SUBJECT = 'Код подтверждения'
     confirmation_code = "ABC"
-    TEXT = f'Ваш код подтерждения: {confirmation_code}'
+    TEXT = f'Ваш код подтверждения: {confirmation_code}'
     FROM_FIELD = 'confirmation_code@yamdb.com'
     TO_FIELD = [email, ]
 
     error_fields = {
-        "email": [],
-        "username": []
+        'email': [check_email(email)],
+        'username': [check_username(username)]
     }
+    print(error_fields)
+    print(error_fields['username'])
 
-    def check_email(value):
-        try:
-            validate_email(value)
-            if value == '':
-                error_fields['email'].append("email не может быть пустым")
-                return False
-            if User.objects.filter(email=value).exists():
-                error_fields['email'].append("email уже есть в базе")
-                return False
-            return True
-        except ValidationError:
-            error_fields['email'].append("Некорректный email")
-            return False
-
-    def check_username(value):
-        try:
-            validate_username(value)
-            if value == 'me' or value == '':
-                error_fields['username'].append(
-                    "Имя пользователя не может быть me или пустым")
-                return False
-            if User.objects.filter(username=value).exists():
-                error_fields['username'].append("Пользователь уже существует")
-                return False
-            return True
-        except ValidationError:
-            error_fields['username'].append("Некорректный username")
-            return False
-
-    if not check_username(username) or not check_email(email):
+    if (type(error_fields['email'][0]) == str
+            or type(error_fields['username'][0]) == str):
         return Response(error_fields, status=status.HTTP_400_BAD_REQUEST)
 
     send_mail(
