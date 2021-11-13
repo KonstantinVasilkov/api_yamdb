@@ -73,7 +73,6 @@ def token_obtain(request):
 
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
-# flake8: noqa: C901
 def signup(request):
     email = ''
     username = ''
@@ -112,7 +111,7 @@ def signup(request):
             validate_username(value)
             if value == 'me' or value == '':
                 error_fields['username'].append(
-                    "Имя пользоватлея не можеты быть me или пустым")
+                    "Имя пользователя не может быть me или пустым")
                 return False
             if User.objects.filter(username=value).exists():
                 error_fields['username'].append("Пользователь уже существует")
