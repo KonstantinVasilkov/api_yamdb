@@ -53,6 +53,23 @@ class TitlesViewSet(viewsets.ModelViewSet):
             return TitleBaseSerializater
         return TitlePostSerializer
 
+    def get_queryset(self):
+        for object in Title.objects.all():
+            reviews = object.reviews.all()
+            score = 0
+            if not reviews:
+                pass
+            else:
+                for review in reviews:
+                    score += review.score
+                try:
+                    rating = round(score / reviews.count())
+                    object.rating = rating
+                    object.save()
+                except ZeroDivisionError:
+                    pass
+        return Title.objects.all()
+
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
