@@ -1,7 +1,4 @@
-from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.core.validators import validate_email
-from django.core.validators import validate_slug as validate_username
 from django.shortcuts import get_object_or_404
 from requests.models import Response
 from rest_framework import exceptions, filters, status
@@ -12,15 +9,16 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from django.conf import settings
 from .models import User
 from .permissions import AdminOrOwnProfile
 from .serializers import UserSerializer
+from .utils import check_email, verify_code, check_username
 
 
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
 def token_obtain(request):
-    SAMPLE_CODE = 'ABC'
     errors = False
     error_404 = False
     error_fields = {
@@ -39,11 +37,8 @@ def token_obtain(request):
     else:
         errors = True
         error_fields['confirmation_code'].append(
-            'Отсутствует поле confrimation_code')
+            'Отсутствует поле confirmation_code')
         confirmation_code = ''
-
-    def verify_code(value):
-        return value == SAMPLE_CODE
 
     try:
         user = get_object_or_404(User, username=username)
@@ -69,30 +64,6 @@ def token_obtain(request):
     return Response(token, status=status.HTTP_200_OK)
 
 
-def check_username(value):
-    try:
-        validate_username(value)
-        if value == 'me' or not value:
-            return "Имя пользователя не может быть me или пустым"
-        if User.objects.filter(username=value).exists():
-            return "Пользователь уже существует"
-        return True
-    except ValidationError:
-        return "Некорректный username"
-
-
-def check_email(value):
-    try:
-        validate_email(value)
-        if not value:
-            return "email не может быть пустым"
-        if User.objects.filter(email=value).exists():
-            return "email уже есть в базе"
-        return True
-    except ValidationError:
-        return "Некорректный email"
-
-
 @api_view(['POST'])
 @renderer_classes([JSONRenderer])
 def signup(request):
@@ -102,29 +73,18 @@ def signup(request):
         email = request.data['email']
     if 'username' in request.data:
         username = request.data['username']
-
-    SUBJECT = 'Код подтверждения'
-    confirmation_code = "ABC"
-    TEXT = f'Ваш код подтверждения: {confirmation_code}'
-    FROM_FIELD = 'confirmation_code@yamdb.com'
-    TO_FIELD = [email, ]
-
     error_fields = {
         'email': [check_email(email)],
         'username': [check_username(username)]
     }
-    print(error_fields)
-    print(error_fields['username'])
-
     if (type(error_fields['email'][0]) == str
             or type(error_fields['username'][0]) == str):
         return Response(error_fields, status=status.HTTP_400_BAD_REQUEST)
-
     send_mail(
-        SUBJECT,
-        TEXT,
-        FROM_FIELD,
-        TO_FIELD,
+        settings.SUBJECT,
+        settings.TEXT,
+        settings.FROM_FIELD,
+        [email, ],
         fail_silently=False,
     )
     User.objects.create(username=username, email=email)
