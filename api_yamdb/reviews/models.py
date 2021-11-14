@@ -71,21 +71,28 @@ class Review(models.Model):
     )
     score = models.IntegerField(
         verbose_name='Оценка',
-        blank=False,
         validators=(
-            MinValueValidator(1),
-            MaxValueValidator(10)
+            MinValueValidator(
+                1,
+                message='Оценка должна быть в диапазоне от 1 до 10'
+            ),
+            MaxValueValidator(
+                10,
+                message='Оценка должна быть в диапазоне от 1 до 10'
+            )
         )
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации отзыва',
-        auto_now_add=True
+        auto_now_add=True,
+        db_index=True
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='reviews',
-        verbose_name='Автор отзыва'
+        verbose_name='Автор отзыва',
+        db_index=True
     )
     title = models.ForeignKey(
         Title,
@@ -94,8 +101,15 @@ class Review(models.Model):
     )
 
     class Meta:
-        unique_together = ('author', 'title')
         ordering = ['-pub_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=('author', 'title'),
+                name='one_review_per_title'
+            ),
+        ]
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
 
     def __str__(self):
         return self.text[:10]
@@ -113,10 +127,12 @@ class Comment(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='comments',
+        db_index=True
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата добавления комментария',
-        auto_now_add=True
+        auto_now_add=True,
+        db_index=True
     )
     text = models.TextField(
         verbose_name='Текст комментария',
@@ -124,6 +140,8 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ['-pub_date']
+        verbose_name = 'Комментарий к отзыву'
+        verbose_name_plural = 'Комментарии к отзыву'
 
     def __str__(self):
         return self.text[:10]
