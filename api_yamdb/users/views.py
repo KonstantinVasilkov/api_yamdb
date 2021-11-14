@@ -125,9 +125,7 @@ class UserViewSet(ModelViewSet):
     def perform_update(self, serializer):
         role = self.request.user.role
         if (self.request.user.is_authenticated
-                and role != 'admin'
-                and not self.request.user.is_staff
-                and not self.request.user.is_superuser):
+                and not self.request.user.is_admin):
             serializer.save(role=role)
         else:
             super().perform_update(serializer)

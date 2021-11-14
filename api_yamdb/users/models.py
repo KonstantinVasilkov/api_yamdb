@@ -27,3 +27,16 @@ class User(AbstractUser):
         if self.is_superuser:
             self.role = 'admin'
         return super().save(*args, **kwargs)
+
+    @property
+    def is_admin(self):
+        return (
+            self.role=='admin' or self.is_superuser or self.is_staff)
+
+    @property
+    def is_moderator(self):
+        return self.role=='moderator'
+
+    @property
+    def is_user(self):
+        return self.role=='user'
