@@ -1,5 +1,4 @@
-import datetime as dt
-
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
@@ -43,37 +42,24 @@ class ReviewSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Category
-        fields = ('name', 'slug')
+        exclude = ['id']
 
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Genre
-        fields = ('name', 'slug')
+        exclude = ['id']
 
 
 class TitleBaseSerializater(serializers.ModelSerializer):
     genre = GenreSerializer(read_only=True, many=True)
     category = CategorySerializer(read_only=True)
-    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Title
         fields = ('id', 'name', 'year', 'rating',
                   'description', 'genre', 'category')
-
-    def get_rating(self, obj):
-        score = 0
-        reviews = obj.reviews.all()
-        if not reviews:
-            return None
-        for review in reviews:
-            score += review.score
-        try:
-            rating = round(score / reviews.count())
-        except ZeroDivisionError:
-            return None
-        return rating
+        read_only_fields = ['rating']
 
 
 class TitlePostSerializer(serializers.ModelSerializer):
@@ -89,7 +75,7 @@ class TitlePostSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
     def validate_year(self, value):
-        year = dt.date.today().year
+        year = timezone.now().year
         if 0 < value > year:
             raise serializers.ValidationError('Неправильный год!')
         return value

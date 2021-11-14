@@ -82,6 +82,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CONFIRMATION_CODE_SAMPLE = "ABC"
+SUBJECT = 'Код подтверждения'
+TEXT = f'Ваш код подтверждения: {CONFIRMATION_CODE_SAMPLE}'
+FROM_FIELD = 'confirmation_code@yamdb.com'
+
 LANGUAGE_CODE = 'ru-Ru'
 
 TIME_ZONE = 'UTC'

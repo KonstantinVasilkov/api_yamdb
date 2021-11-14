@@ -11,13 +11,11 @@ class AdminOrOwnProfile(permissions.BasePermission):
 
         if not request.user.is_authenticated:
             return False
-        return (request.user.is_staff
-                or request.user.is_superuser
-                or request.user.role == 'admin'
-                or own_data_flag)
+        return (
+            request.user.is_admin
+            or own_data_flag)
 
     def has_object_permission(self, request, view, obj):
-        return (obj.username == request.user.username
-                or request.user.is_staff
-                or request.user.is_superuser
-                or request.user.role == 'admin')
+        return (
+            obj.username == request.user.username
+            or request.user.is_admin)
