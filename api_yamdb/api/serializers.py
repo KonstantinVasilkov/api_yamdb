@@ -71,12 +71,10 @@ class TitlePostSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=models.Category.objects.all()
     )
-    rating = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.Title
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genre',
-                  'category')
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
 
     def validate_year(self, value):
         year = timezone.now().year

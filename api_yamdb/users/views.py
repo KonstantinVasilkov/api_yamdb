@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+
 from requests.models import Response
 from rest_framework import exceptions, filters, status
 from rest_framework.decorators import api_view, renderer_classes
@@ -9,11 +11,10 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from django.conf import settings
 from .models import User
 from .permissions import AdminOrOwnProfile
 from .serializers import UserSerializer
-from .utils import check_email, verify_code, check_username
+from .utils import check_email, check_username, verify_code
 
 
 @api_view(['POST'])
