@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
@@ -5,13 +6,18 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.pagination import (LimitOffsetPagination,
                                        PageNumberPagination)
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from reviews.models import Category, Genre, Review, Title
 
+from reviews.models import Category, Genre, Review, Title
 from .filters import TitlesFilter
 from .permissions import IsAdminOrReadOnly, IsAuthorOrStaffOrReadOnly
-from .serializers import (CategorySerializer, CommentSerializer,
-                          GenreSerializer, ReviewSerializer,
-                          TitleBaseSerializater, TitlePostSerializer)
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitleBaseSerializer,
+    TitlePostSerializer
+)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
@@ -25,7 +31,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'head', 'delete']
 
     def retrieve(self, request, slug):
-        raise MethodNotAllowed("Не разрешенный метод")
+        raise MethodNotAllowed('Не разрешенный метод')
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -38,7 +44,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
     pagination_class = PageNumberPagination
 
     permission_classes = (
@@ -50,25 +56,8 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return TitleBaseSerializater
+            return TitleBaseSerializer
         return TitlePostSerializer
-
-    def get_queryset(self):
-        for object in Title.objects.all():
-            reviews = object.reviews.all()
-            score = 0
-            if not reviews:
-                pass
-            else:
-                for review in reviews:
-                    score += review.score
-                try:
-                    rating = round(score / reviews.count())
-                    object.rating = rating
-                    object.save()
-                except ZeroDivisionError:
-                    pass
-        return Title.objects.all()
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):

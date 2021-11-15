@@ -22,8 +22,8 @@ def token_obtain(request):
     errors = False
     error_404 = False
     error_fields = {
-        "username": [],
-        "confirmation_code": []
+        'username': [],
+        'confirmation_code': []
     }
     if 'username' in request.data:
         username = request.data['username']
@@ -37,7 +37,8 @@ def token_obtain(request):
     else:
         errors = True
         error_fields['confirmation_code'].append(
-            'Отсутствует поле confirmation_code')
+            'Отсутствует поле confirmation_code'
+        )
         confirmation_code = ''
 
     try:
@@ -47,7 +48,7 @@ def token_obtain(request):
         user = None
 
     if error_404 and not errors:
-        return Response("username не найден", status=status.HTTP_404_NOT_FOUND)
+        return Response('username не найден', status=status.HTTP_404_NOT_FOUND)
 
     if errors:
         return Response(error_fields, status=status.HTTP_400_BAD_REQUEST)

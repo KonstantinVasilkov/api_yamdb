@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
+
 from reviews import models
 
 
@@ -51,14 +52,15 @@ class GenreSerializer(serializers.ModelSerializer):
         exclude = ['id']
 
 
-class TitleBaseSerializater(serializers.ModelSerializer):
+class TitleBaseSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(read_only=True, many=True)
     category = CategorySerializer(read_only=True)
+    rating = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.Title
-        fields = ('id', 'name', 'year', 'rating',
-                  'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'rating', 'description', 'genre',
+                  'category')
         read_only_fields = ['rating']
 
 
@@ -69,10 +71,12 @@ class TitlePostSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=models.Category.objects.all()
     )
+    rating = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'rating', 'description', 'genre',
+                  'category')
 
     def validate_year(self, value):
         year = timezone.now().year
