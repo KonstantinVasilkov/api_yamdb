@@ -1,7 +1,7 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
+from rest_framework import filters, viewsets, mixins
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.pagination import (
     LimitOffsetPagination,
@@ -22,6 +22,13 @@ from .serializers import (
 )
 
 
+class CreateListDeleteViewSet(mixins.CreateModelMixin,
+                              mixins.ListModelMixin,
+                              mixins.DestroyModelMixin,
+                              viewsets.GenericViewSet):
+    pass
+
+
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
@@ -36,7 +43,7 @@ class GenreViewSet(viewsets.ModelViewSet):
         raise MethodNotAllowed('Не разрешенный метод')
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(CreateListDeleteViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsAdminOrReadOnly]
